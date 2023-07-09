@@ -21,6 +21,8 @@ from beancount.ingest import identify
 from beancount.ingest import cache
 from beancount import loader
 
+from datetime import datetime
+
 
 # The format for the header in the extracted output.
 # You may override this value from your .import script.
@@ -76,6 +78,9 @@ def extract_from_file(filename, importer,
     # Ensure that the entries are typed correctly.
     for entry in new_entries:
         data.sanity_check_types(entry, allow_none_for_tags_and_links)
+
+    if not min_date:
+        min_date = importer.minimum_date()
 
     # Filter out entries with dates before 'min_date'.
     if min_date:
@@ -140,20 +145,24 @@ def filing_target(entry, output_file_set, output_dir):
     if base_acct in output_file_set:
         outfile = output_file_set[base_acct]
     else:
-        filename = base_acct.replace(':', '.') + ".bc"
+        filename = base_acct.replace(':', '.') + ".beancount"
         filename_full = os.path.abspath(output_dir + os.sep + filename)
         outfile = open(filename_full, 'a')
+
+        now = datetime.now()
+        string = "___"*25 + "\n"
+        string += f'* Importer Append: {now.strftime("%Y-%m-%d %H:%M:%S")}'
+        print(string, file=outfile)
         output_file_set[base_acct] = outfile
 
     return outfile
 
 
-def output_extracted_entries_to_account_files(entries, output_dir=None):
+def output_extracted_entries_to_account_files(entries, output_file_set, output_dir=None):
     """Print the entries for the given importer, to one file per account
     """
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
-    output_file_set = {}
     # Print out the entries.
     for entry in entries:
         outfile = filing_target(entry, output_file_set, output_dir)
@@ -168,9 +177,6 @@ def output_extracted_entries_to_account_files(entries, output_dir=None):
             entry_string = printer.format_entry(entry)
 
         print(entry_string, file=outfile)
-
-    for f in output_file_set.values():
-        f.close()
 
 
 def print_extracted_entries(entries, file):
@@ -266,6 +272,9 @@ def extract(importer_config,
     assert all(isinstance(new_entries[0], str) for new_entries in new_entries_list)
     assert all(isinstance(new_entries[1], list) for new_entries in new_entries_list)
 
+    if output_one_file_per_account:
+         output_file_set = {}
+
     # Print out the results.
     output.write(HEADER)
     for key, new_entries in new_entries_list:
@@ -275,9 +284,14 @@ def extract(importer_config,
             new_entries.reverse()
         # print_extracted_entries(new_entries, output)
         if output_one_file_per_account:
-            output_extracted_entries_to_account_files(new_entries, output_dir)
+            output_extracted_entries_to_account_files(new_entries, output_file_set,output_dir)
         else:
             print_extracted_entries(new_entries, output)
+    
+    if output_one_file_per_account:
+
+        for f in output_file_set.values():
+            f.close()
 
 
 DESCRIPTION = "Extract transactions from downloads"
