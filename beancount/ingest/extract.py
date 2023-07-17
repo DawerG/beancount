@@ -150,8 +150,9 @@ def filing_target(entry, output_file_set, output_dir):
         outfile = open(filename_full, 'a')
 
         now = datetime.now()
-        string = "___"*25 + "\n"
-        string += f'* Importer Append: {now.strftime("%Y-%m-%d %H:%M:%S")}'
+        string = "; " +"==="*25 + "\n"
+        string += f'; * Importer Append: {now.strftime("%Y-%m-%d %H:%M:%S")} \n'
+        string += "; " +"==="*25 + "\n"
         print(string, file=outfile)
         output_file_set[base_acct] = outfile
 
