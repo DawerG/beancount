@@ -36,7 +36,7 @@ class ImporterProtocol:
 
     # A flag to use on new transaction. Override this flag in derived classes if
     # you prefer to create your imported transactions with a different flag.
-    FLAG = flags.FLAG_OKAY
+    FLAG = flags.FLAG_WARNING
 
     def name(self):
         """Return a unique id/name for this importer.
